@@ -1,0 +1,10 @@
+1、用c++11标准重新实现了muduo库的一部分功能，移除了原版muduo库对boost库的依赖
+2、基本还原了muduo库的one loop per therad思想
+3、只实现了poller的功能
+基本实现总结：
+1、用户首先定义一个baseloop，每一个loop底层有一个Poller(核心是做epoll相关的操作)，
+2、baseloop运行了一个acceptor(功能是①创建socket②listen③把socket封装成acceptChannel注册到poller里)
+3、acceptor将listenfd封装成acceptChannel注册到poller上，此时poller就可以监听acceptChannel上的事件了
+4、当有事件发生了，channel会实现相应的回调(这里给acceptChannel绑定的回调就是Acceptor::handleRead)
+5、Acceptor::handleRead调用accep函数返回一个connfd，然后执行newConnection回调(TcpServer设置的)
+6、TcpServer::newConnection：根据轮询选择一个subloop，唤醒subloop，把当前的connfd封装成channel分发给subloop
